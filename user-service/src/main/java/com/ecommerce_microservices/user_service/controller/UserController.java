@@ -1,0 +1,34 @@
+package com.ecommerce_microservices.user_service.controller;
+
+import com.ecommerce_microservices.user_service.dto.request.CreateUserRequest;
+import com.ecommerce_microservices.user_service.dto.response.ApiResponse;
+import com.ecommerce_microservices.user_service.dto.response.CreateUserResponse;
+import com.ecommerce_microservices.user_service.service.UserService;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/users")
+public class UserController {
+
+    private final UserService userService;
+
+    @PostMapping
+    ApiResponse<CreateUserResponse> createUser(
+        @RequestBody @Valid CreateUserRequest request
+    ) {
+        var data = userService.createUser(request);
+        return ApiResponse.<CreateUserResponse>builder()
+            .code(HttpStatus.CREATED.value())
+            .message("User created successfully")
+            .data(data)
+            .build();
+    }
+
+}
