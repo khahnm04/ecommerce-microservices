@@ -50,4 +50,13 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Address> addresses = new HashSet<>();
 
+    public void addRole(Role role) {
+        this.userHasRoles.add(
+            UserHasRole.builder()
+                .user(this)
+                .role(role)
+                .build()
+        );
+    }
+
 }
