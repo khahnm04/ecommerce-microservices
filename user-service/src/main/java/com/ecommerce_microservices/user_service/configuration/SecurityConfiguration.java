@@ -25,14 +25,16 @@ public class SecurityConfiguration {
     };
 
     private final CustomUserDetailService userDetailService;
+    private final CustomJwtDecoder jwtDecoder;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-            .csrf(AbstractHttpConfigurer::disable)
+    SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        return http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated())
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder)))
             .build();
     }
 
