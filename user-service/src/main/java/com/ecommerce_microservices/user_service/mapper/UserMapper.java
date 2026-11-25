@@ -2,6 +2,7 @@ package com.ecommerce_microservices.user_service.mapper;
 
 import com.ecommerce_microservices.user_service.dto.request.CreateUserRequest;
 import com.ecommerce_microservices.user_service.dto.response.CreateUserResponse;
+import com.ecommerce_microservices.user_service.dto.response.UserDetailResponse;
 import com.ecommerce_microservices.user_service.entity.User;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.Mapping;
@@ -14,5 +15,7 @@ public interface UserMapper {
     User toUser(CreateUserRequest request);
 
     CreateUserResponse toCreateUserResponse(User user);
+
+    UserDetailResponse toUserDetailResponse(User user);
 
 }

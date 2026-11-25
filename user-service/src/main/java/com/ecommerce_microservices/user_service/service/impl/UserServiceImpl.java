@@ -1,5 +1,6 @@
 package com.ecommerce_microservices.user_service.service.impl;
 
+import com.ecommerce_microservices.user_service.dto.response.UserDetailResponse;
 import com.ecommerce_microservices.user_service.exception.ErrorCode;
 import com.ecommerce_microservices.user_service.exception.UserServiceException;
 import com.ecommerce_microservices.user_service.enums.RoleType;
@@ -42,6 +43,14 @@ public class UserServiceImpl implements UserService {
             throw new UserServiceException(ErrorCode.USER_ALREADY_EXISTS);
         }
         return userMapper.toCreateUserResponse(user);
+    }
+
+    @Override
+    public UserDetailResponse myInfo(String userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserServiceException(ErrorCode.USER_NOT_FOUND));
+
+        return userMapper.toUserDetailResponse(user);
     }
 
 }
