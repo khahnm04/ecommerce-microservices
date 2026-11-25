@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -20,12 +22,29 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    ApiResponse<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+    ApiResponse<LoginResponse> login(
+        @RequestBody @Valid LoginRequest request,
+        HttpServletResponse response
+    ) {
         var data = authenticationService.login(request);
+
+        Cookie cookie = new Cookie("refresh_token", data.refreshToken());
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(14 * 24 * 60 * 60);
+        response.addCookie(cookie);
+
+        LoginResponse responseData = LoginResponse.builder()
+            .accessToken(data.accessToken())
+            .refreshToken(null)
+            .roles(data.roles())
+            .build();
+
         return ApiResponse.<LoginResponse>builder()
             .code(HttpStatus.OK.value())
             .message("Login successful")
-            .data(data)
+            .data(responseData)
             .build();
     }
 
