@@ -7,4 +7,6 @@ public interface AuthenticationService {
 
     LoginResponse login(LoginRequest request);
 
+    LoginResponse refreshToken(String refreshToken);
+
 }
