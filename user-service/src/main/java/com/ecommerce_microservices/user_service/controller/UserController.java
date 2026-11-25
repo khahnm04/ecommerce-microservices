@@ -1,7 +1,7 @@
 package com.ecommerce_microservices.user_service.controller;
 
-import com.ecommerce_microservices.user_service.dto.request.CreateUserRequest;
 import com.ecommerce_microservices.user_service.dto.response.ApiResponse;
+import com.ecommerce_microservices.user_service.dto.request.CreateUserRequest;
 import com.ecommerce_microservices.user_service.dto.response.CreateUserResponse;
 import com.ecommerce_microservices.user_service.service.UserService;
 import org.springframework.web.bind.annotation.RestController;
