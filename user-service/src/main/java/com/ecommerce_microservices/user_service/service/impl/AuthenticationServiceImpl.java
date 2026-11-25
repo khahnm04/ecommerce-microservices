@@ -2,11 +2,14 @@ package com.ecommerce_microservices.user_service.service.impl;
 
 import com.ecommerce_microservices.user_service.exception.ErrorCode;
 import com.ecommerce_microservices.user_service.exception.UserServiceException;
+import com.ecommerce_microservices.user_service.entity.RedisToken;
 import com.ecommerce_microservices.user_service.entity.User;
+import com.ecommerce_microservices.user_service.dto.internal.TokenDetails;
 import com.ecommerce_microservices.user_service.dto.request.LoginRequest;
 import com.ecommerce_microservices.user_service.dto.response.LoginResponse;
-import com.ecommerce_microservices.user_service.service.JwtService;
 import com.ecommerce_microservices.user_service.service.AuthenticationService;
+import com.ecommerce_microservices.user_service.service.JwtService;
+import com.ecommerce_microservices.user_service.service.RedisTokenService;
 import com.ecommerce_microservices.user_service.repository.UserRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +31,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RedisTokenService redisTokenService;
     private final UserRepository userRepository;
 
     @Override
@@ -48,11 +52,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             .collect(Collectors.toSet());
 
         String accessToken = jwtService.generateAccessToken(user.getId(), roles);
-        String refreshToken = jwtService.generateRefreshToken(user.getId());
+        TokenDetails refreshToken = jwtService.generateRefreshToken(user.getId());
+
+        RedisToken redisToken = RedisToken.builder()
+            .jwtId(refreshToken.jwtId())
+            .userId(user.getId())
+            .expiration(refreshToken.ttlSeconds())
+            .build();
+
+        redisTokenService.saveToken(redisToken);
 
         return LoginResponse.builder()
             .accessToken(accessToken)
-            .refreshToken(refreshToken)
+            .refreshToken(refreshToken.value())
             .roles(roles)
             .build();
     }
