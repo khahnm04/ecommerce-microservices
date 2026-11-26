@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -44,6 +45,16 @@ public class UserController {
         return ApiResponse.<UserDetailResponse>builder()
             .code(HttpStatus.OK.value())
             .message("User info retrieved successfully")
+            .data(data)
+            .build();
+    }
+
+    @GetMapping
+    ApiResponse<List<UserDetailResponse>> getAllUsers() {
+        var data = userService.getAllUsers();
+        return ApiResponse.<List<UserDetailResponse>>builder()
+            .code(HttpStatus.OK.value())
+            .message("Users retrieved successfully")
             .data(data)
             .build();
     }

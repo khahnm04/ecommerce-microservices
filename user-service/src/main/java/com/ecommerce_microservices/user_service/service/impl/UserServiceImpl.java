@@ -1,6 +1,5 @@
 package com.ecommerce_microservices.user_service.service.impl;
 
-import com.ecommerce_microservices.user_service.dto.response.UserDetailResponse;
 import com.ecommerce_microservices.user_service.exception.ErrorCode;
 import com.ecommerce_microservices.user_service.exception.UserServiceException;
 import com.ecommerce_microservices.user_service.enums.RoleType;
@@ -8,15 +7,18 @@ import com.ecommerce_microservices.user_service.entity.User;
 import com.ecommerce_microservices.user_service.entity.Role;
 import com.ecommerce_microservices.user_service.dto.request.CreateUserRequest;
 import com.ecommerce_microservices.user_service.dto.response.CreateUserResponse;
+import com.ecommerce_microservices.user_service.dto.response.UserDetailResponse;
 import com.ecommerce_microservices.user_service.mapper.UserMapper;
 import com.ecommerce_microservices.user_service.service.RoleService;
 import com.ecommerce_microservices.user_service.service.UserService;
 import com.ecommerce_microservices.user_service.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +53,15 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new UserServiceException(ErrorCode.USER_NOT_FOUND));
 
         return userMapper.toUserDetailResponse(user);
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public List<UserDetailResponse> getAllUsers() {
+        return userRepository.findAll()
+            .stream()
+            .map(userMapper::toUserDetailResponse)
+            .toList();
     }
 
 }
