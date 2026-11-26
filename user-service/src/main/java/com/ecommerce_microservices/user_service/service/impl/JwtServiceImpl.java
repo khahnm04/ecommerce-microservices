@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.ecommerce_microservices.user_service.constant.JWTConstant.*;
+import static com.ecommerce_microservices.user_service.constant.JwtConstant.*;
 
 @Service
 public class JwtServiceImpl implements JwtService {

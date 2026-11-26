@@ -13,15 +13,19 @@ import com.ecommerce_microservices.user_service.service.RedisTokenService;
 import com.ecommerce_microservices.user_service.repository.UserRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.text.ParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
+import java.time.Instant;
 import java.util.Set;
 
 @Service
@@ -96,8 +100,49 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public void logout(String accessToken, String refreshToken) {
+    public void logout(String refreshToken) throws ParseException, JOSEException {
+        if (refreshToken == null) {
+            throw new UserServiceException(ErrorCode.MISSING_LOGOUT_INFO);
+        }
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication == null) {
+            throw new UserServiceException(ErrorCode.TOKEN_INVALID);
+        }
+        String userId = authentication.getName();
+
+        SignedJWT signedRefreshToken = jwtService.validateToken(refreshToken);
+        String refreshUserId = signedRefreshToken.getJWTClaimsSet().getSubject();
+        String refreshJwtId = signedRefreshToken.getJWTClaimsSet().getJWTID();
+
+        if (!userId.equals(refreshUserId)) {
+            throw new UserServiceException(ErrorCode.TOKEN_INVALID);
+        }
+
+        redisTokenService.deleteTokenByJwtId(refreshJwtId);
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        if(jwt == null) {
+            throw new UserServiceException(ErrorCode.TOKEN_INVALID);
+        }
+
+        String accessJwtId = jwt.getId();
+        Instant accessExpiration = jwt.getExpiresAt();
+
+        long ttl = ChronoUnit.SECONDS.between(
+            Instant.now(),
+            accessExpiration
+        );
+
+        if (ttl > 0) {
+            redisTokenService.saveToken(
+                RedisToken.builder()
+                    .jwtId(accessJwtId)
+                    .userId(userId)
+                    .expiration(ttl)
+                    .build()
+            );
+        }
     }
 
 }
