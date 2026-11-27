@@ -4,16 +4,19 @@ import com.ecommerce_microservices.product_service.exception.ErrorCode;
 import com.ecommerce_microservices.product_service.exception.ProductServiceException;
 import com.ecommerce_microservices.product_service.entity.Category;
 import com.ecommerce_microservices.product_service.entity.Product;
+import com.ecommerce_microservices.product_service.dto.request.SearchRequest;
 import com.ecommerce_microservices.product_service.dto.request.CreateProductRequest;
 import com.ecommerce_microservices.product_service.dto.response.CreateProductResponse;
 import com.ecommerce_microservices.product_service.dto.response.ProductDetailResponse;
 import com.ecommerce_microservices.product_service.service.ProductService;
 import com.ecommerce_microservices.product_service.repository.CategoryRepository;
 import com.ecommerce_microservices.product_service.repository.ProductRepository;
+import com.ecommerce_microservices.product_service.repository.specification.ProductSpecification;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,8 +65,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDetailResponse> getAllProducts() {
-        return productRepository.findAll()
+    public List<ProductDetailResponse> getAllProducts(SearchRequest request) {
+
+        Specification<Product> specification = Specification.allOf(
+            ProductSpecification.hasName(request.name()),
+            ProductSpecification.hasPrice(request.minPrice(), request.maxPrice()),
+            ProductSpecification.hasStatus(request.status()),
+            ProductSpecification.inStock(request.inStock()),
+            ProductSpecification.hasCategory(request.categoryId())
+        );
+
+        return productRepository.findAll(specification)
             .stream()
             .map(product -> ProductDetailResponse.builder()
                 .id(product.getId())

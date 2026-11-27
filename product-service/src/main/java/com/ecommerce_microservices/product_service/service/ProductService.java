@@ -1,5 +1,6 @@
 package com.ecommerce_microservices.product_service.service;
 
+import com.ecommerce_microservices.product_service.dto.request.SearchRequest;
 import com.ecommerce_microservices.product_service.dto.request.CreateProductRequest;
 import com.ecommerce_microservices.product_service.dto.response.CreateProductResponse;
 import com.ecommerce_microservices.product_service.dto.response.ProductDetailResponse;
@@ -9,7 +10,7 @@ public interface ProductService {
 
     CreateProductResponse createProduct(String sellerId, CreateProductRequest request);
 
-    List<ProductDetailResponse> getAllProducts();
+    List<ProductDetailResponse> getAllProducts(SearchRequest request);
 
     ProductDetailResponse getProductById(String id);
 
