@@ -1,8 +1,9 @@
 package com.ecommerce_microservices.product_service.controller;
 
-import com.ecommerce_microservices.product_service.dto.response.ApiResponse;
 import com.ecommerce_microservices.product_service.dto.request.SearchRequest;
 import com.ecommerce_microservices.product_service.dto.request.CreateProductRequest;
+import com.ecommerce_microservices.product_service.dto.response.ApiResponse;
+import com.ecommerce_microservices.product_service.dto.response.PageResponse;
 import com.ecommerce_microservices.product_service.dto.response.CreateProductResponse;
 import com.ecommerce_microservices.product_service.dto.response.ProductDetailResponse;
 import com.ecommerce_microservices.product_service.service.ProductService;
@@ -35,11 +36,13 @@ public class ProductController {
     }
 
     @GetMapping
-    ApiResponse<List<ProductDetailResponse>> getProducts(
+    ApiResponse<PageResponse<ProductDetailResponse>> getProducts(
+        @RequestParam(required = false, defaultValue = "1") int page,
+        @RequestParam(required = false, defaultValue = "10") int size,
         SearchRequest request
     ) {
-        var data = productService.getAllProducts(request);
-        return ApiResponse.<List<ProductDetailResponse>>builder()
+        var data = productService.getAllProducts(page, size, request);
+        return ApiResponse.<PageResponse<ProductDetailResponse>>builder()
             .code(HttpStatus.OK.value())
             .message("Products retrieved successfully")
             .data(data)

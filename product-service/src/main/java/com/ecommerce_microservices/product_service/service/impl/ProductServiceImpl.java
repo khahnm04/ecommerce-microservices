@@ -6,6 +6,7 @@ import com.ecommerce_microservices.product_service.entity.Category;
 import com.ecommerce_microservices.product_service.entity.Product;
 import com.ecommerce_microservices.product_service.dto.request.SearchRequest;
 import com.ecommerce_microservices.product_service.dto.request.CreateProductRequest;
+import com.ecommerce_microservices.product_service.dto.response.PageResponse;
 import com.ecommerce_microservices.product_service.dto.response.CreateProductResponse;
 import com.ecommerce_microservices.product_service.dto.response.ProductDetailResponse;
 import com.ecommerce_microservices.product_service.service.ProductService;
@@ -18,6 +19,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.stream.Collectors;
@@ -65,7 +70,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDetailResponse> getAllProducts(SearchRequest request) {
+    public PageResponse<ProductDetailResponse> getAllProducts(int page, int size, SearchRequest request) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.ASC, "name"));
 
         Specification<Product> specification = Specification.allOf(
             ProductSpecification.hasName(request.name()),
@@ -75,8 +81,11 @@ public class ProductServiceImpl implements ProductService {
             ProductSpecification.hasCategory(request.categoryId())
         );
 
-        return productRepository.findAll(specification)
-            .stream()
+        Page<Product> productPage = productRepository.findAll(specification, pageable);
+
+        List<Product> products = productPage.getContent();
+
+        List<ProductDetailResponse> responses = products.stream()
             .map(product -> ProductDetailResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -88,6 +97,14 @@ public class ProductServiceImpl implements ProductService {
                 .createdAt(product.getCreatedAt())
                 .build())
             .toList();
+
+        return PageResponse.<ProductDetailResponse>builder()
+            .currentPage(page)
+            .pageSize(pageable.getPageSize())
+            .totalPages(productPage.getTotalPages())
+            .totalElements(productPage.getTotalElements())
+            .content(responses)
+            .build();
     }
 
     @Override
