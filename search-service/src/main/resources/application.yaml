@@ -1,0 +1,19 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: search-service
+  config:
+    import: "optional:file:./search-service/.env[.properties]"
+
+elasticsearch:
+  server-url: http://localhost:9200
+  api-key: ${API_KEY_ELASTICSEARCH}
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
