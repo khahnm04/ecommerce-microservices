@@ -1,9 +1,12 @@
 package com.ecommerce_microservices.product_service.service.impl;
 
+import com.ecommerce_microservices.event.ProductCreatedEvent;
+import com.ecommerce_microservices.event.ProductDeletedEvent;
 import com.ecommerce_microservices.product_service.exception.ErrorCode;
 import com.ecommerce_microservices.product_service.exception.ProductServiceException;
 import com.ecommerce_microservices.product_service.entity.Category;
 import com.ecommerce_microservices.product_service.entity.Product;
+import com.ecommerce_microservices.product_service.entity.ProductImage;
 import com.ecommerce_microservices.product_service.dto.request.SearchRequest;
 import com.ecommerce_microservices.product_service.dto.request.CreateProductRequest;
 import com.ecommerce_microservices.product_service.dto.response.PageResponse;
@@ -18,6 +21,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +40,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @PreAuthorize("hasAnyAuthority('SELLER','ADMIN')")
     @Override
@@ -43,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(request.categoryId())
             .orElseThrow(() -> new ProductServiceException(ErrorCode.CATEGORY_NOT_FOUND));
 
+        // Create product
         Product product = Product.builder()
             .sellerId(sellerId)
             .name(request.name())
@@ -56,6 +62,26 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.save(product);
         log.info("Product created successfully");
+
+        // Publish ProductCreatedEvent
+        ProductCreatedEvent event = ProductCreatedEvent.builder()
+            .id(product.getId())
+            .name(product.getName())
+            .description(product.getDescription())
+            .price(product.getPrice().doubleValue())
+            .categoryId(category.getId())
+            .categoryName(category.getName())
+            .thumbnail(product.getImages().stream()
+                .filter(ProductImage::getIsPrimary)
+                .map(ProductImage::getUrl)
+                .findFirst()
+                .orElse(""))
+            .status(product.getStatus().name())
+            .inStock(product.getQuantity() > 0)
+            .createdAt(product.getCreatedAt())
+            .build();
+
+        kafkaTemplate.send("product-events", product.getId(), event);
 
         return CreateProductResponse.builder()
             .id(product.getId())
@@ -129,6 +155,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new ProductServiceException(ErrorCode.PRODUCT_NOT_FOUND));
 
+        // Check authorization
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null) {
             throw new ProductServiceException(ErrorCode.UNAUTHORIZED);
@@ -146,6 +173,13 @@ public class ProductServiceImpl implements ProductService {
         }
 
         productRepository.delete(product);
+
+        // Publish ProductDeletedEvent
+        ProductDeletedEvent event = ProductDeletedEvent.builder()
+            .id(product.getId())
+            .build();
+
+        kafkaTemplate.send("product-events", product.getId(), event);
         log.info("Product deleted successfully");
     }
 
