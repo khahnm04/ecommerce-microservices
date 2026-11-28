@@ -12,7 +12,7 @@ import java.io.IOException;
 @Slf4j(topic = "ELASTICSEARCH-INDEX-INIT")
 public class ElasticsearchIndexInitializer {
 
-    private static final String PRODUCT_INDEX = "products";
+    public static final String PRODUCT_INDEX = "products";
 
     private final ElasticsearchClient elasticsearchClient;
 
